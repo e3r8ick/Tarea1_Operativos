@@ -1,0 +1,17 @@
+# ***Test.service***
+#[Unit]
+#Description=test deamon
+#After=multi-user.target
+ 
+[Service]
+#Type=simple
+ExecStart=/home/mike/Documents/OS/Tarea1/Tarea1_Operativos/daemon-scripts/start.sh
+ExecStop=/home/mike/Documents/OS/Tarea1/Tarea1_Operativos/daemon-scripts/stop.sh
+#User=mike
+WorkingDirectory=/home/mike/Documents/OS/Tarea1/Tarea1_Operativos/daemon-scripts
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+ 
+[Install]
+WantedBy=multi-user.target

@@ -1,3 +1,3 @@
 
 main:
-	gcc -o bin/main src/main.c -Llib -Iinclude -lserver
+	gcc -o bin/ImageServer src/main.c -Llib -Iinclude -lserver -lrest
