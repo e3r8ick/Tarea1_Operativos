@@ -6,20 +6,22 @@
 
 const int color_depth = 256;
 
-void hist(){
-
-    if(argc != 2){
-        printf("Usage: %s image\n", argv[0]);
-        exit(-1);
-    }
-
-    int image_width = 256;
-    int image_height = 256;
+void hist(char* filename){
+    //read size from header
+    int* size;
+    size = read_size(filename);
+    int image_width = size[0];
+    printf("w: %i\n",image_width);
+    int image_height = size[1];
+    printf("h: %i\n",image_height);
     int image_size = image_width*image_height;
+    /*int image_width = 256;
+    int image_height = 256;
+    int image_size = image_width*image_height;*/
 
     // read from the input bmp image file
     printf("here1\n");
-    unsigned char* image = read_grayscale(argv[1]);
+    unsigned char* image = read_grayscale(filename);
     printf("here2\n");
     unsigned char* output_image = malloc(sizeof(unsigned char) * image_size);
 
@@ -48,16 +50,12 @@ void hist(){
     // write(image,offset_size(argv[1]), read_head(argv[1]), image_width,image_height,"out.bmp");
 }
 
-void racist(){
+void racist(char* filename){
 
-    if(argc != 2){
-        printf("Usage: %s image \n", argv[0]);
-        exit(-1);
-    }
 
     //read size from header
     int* size;
-    size = read_size(argv[1]);
+    size = read_size(filename);
     int image_width = size[0];
     printf("w: %i\n",image_width);
     int image_height = size[1];
@@ -65,7 +63,7 @@ void racist(){
     int image_size = image_width*image_height;
 
     // read from the input bmp image file
-    unsigned char* image = read_full_color(argv[1]);
+    unsigned char* image = read_full_color(filename);
 
 
     long sumR=0,sumG=0,sumB=0;
