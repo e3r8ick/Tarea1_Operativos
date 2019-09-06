@@ -1,195 +1,173 @@
-/**
-Tomado de https://gist.github.com/laobubu/d6d0e9beb934b60b2e552c2d03e1409e
-*/
 
+
+/* Feel free to use this example code in any way
+   you see fit (Public Domain) */
 #include <server.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <fcntl.h>
-#include <signal.h>
+#if defined(_MSC_VER) && _MSC_VER+0 <= 1800
+/* Substitution is OK while return value is not used */
+#define snprintf _snprintf
+#endif
 
-#define CONNMAX 1000
+#define PORT            8888
+#define POSTBUFFERSIZE  512
+#define MAXNAMESIZE     2000
+#define MAXANSWERSIZE   512
 
-static int listenfd, clients[CONNMAX];
-static void error(char *);
-static void startServer(const char *);
-static void respond(int);
+#define GET             0
+#define POST            1
 
-typedef struct { char *name, *value; } header_t;
-static header_t reqhdr[17] = { {"\0", "\0"} };
-static int clientfd;
+const char *askpage = "<html><body>\
+                       What's your name, Sir?<br>\
+                       <form action=\"/namepost\" method=\"post\">\
+                       <input name=\"name\" type=\"text\">\
+                       <input type=\"submit\" value=\" Send \"></form>\
+                       </body></html>";
 
-static char *buf;
+const char *greetingpage =
+  "<html><body><h1>Welcome, %s!</center></h1></body></html>";
 
-void serve_forever(const char *PORT)
+const char *errorpage =
+  "<html><body>This doesn't seem to be right.</body></html>";
+
+
+int send_page (struct MHD_Connection *connection, const char *page)
 {
-    struct sockaddr_in clientaddr;
-    socklen_t addrlen;
-    char c;
+  int ret;
+  struct MHD_Response *response;
 
-    int slot=0;
 
-    printf(
-            "Server started %shttp://127.0.0.1:%s%s\n",
-            "\033[92m",PORT,"\033[0m"
-            );
+  response =
+    MHD_create_response_from_buffer (strlen (page), (void *) page,
+				     MHD_RESPMEM_PERSISTENT);
+  if (!response)
+    return MHD_NO;
 
-    // Setting all elements to -1: signifies there is no client connected
-    int i;
-    for (i=0; i<CONNMAX; i++)
-        clients[i]=-1;
-    startServer(PORT);
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  MHD_destroy_response (response);
 
-    // Ignore SIGCHLD to avoid zombie threads
-    signal(SIGCHLD,SIG_IGN);
+  return ret;
+}
 
-    // ACCEPT connections
-    while (1)
+
+int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
+              const char *filename, const char *content_type,
+              const char *transfer_encoding, const char *data, uint64_t off,
+              size_t size)
+{
+  struct connection_info_struct *con_info = coninfo_cls;
+  (void)kind;               /* Unused. Silent compiler warning. */
+  (void)filename;           /* Unused. Silent compiler warning. */
+  (void)content_type;       /* Unused. Silent compiler warning. */
+  (void)transfer_encoding;  /* Unused. Silent compiler warning. */
+  (void)off;
+
+             /* Unused. Silent compiler warning. */
+
+  if (0 == strcmp (key, "image"))
     {
-        addrlen = sizeof(clientaddr);
-        clients[slot] = accept (listenfd, (struct sockaddr *) &clientaddr, &addrlen);
+      if ((size > 0) && (size <= MAXNAMESIZE))
+        {
+          char *answerstring;
+          answerstring = malloc (MAXANSWERSIZE);
+          if (!answerstring)
+            return MHD_NO;
 
-        if (clients[slot]<0)
-        {
-            perror("accept() error");
+          snprintf (answerstring, MAXANSWERSIZE, greetingpage, data);
+          con_info->answerstring = answerstring;
         }
-        else
+      else
+        con_info->answerstring = NULL;
+
+      return MHD_NO;
+    }
+
+  return MHD_YES;
+}
+
+void request_completed (void *cls, struct MHD_Connection *connection,
+                   void **con_cls, enum MHD_RequestTerminationCode toe)
+{
+  struct connection_info_struct *con_info = *con_cls;
+  (void)cls;         /* Unused. Silent compiler warning. */
+  (void)connection;  /* Unused. Silent compiler warning. */
+  (void)toe;         /* Unused. Silent compiler warning. */
+
+  if (NULL == con_info)
+    return;
+
+  if (con_info->connectiontype == POST)
+    {
+      MHD_destroy_post_processor (con_info->postprocessor);
+      if (con_info->answerstring)
+        free (con_info->answerstring);
+    }
+
+  free (con_info);
+  *con_cls = NULL;
+}
+
+
+int answer_to_connection (void *cls, struct MHD_Connection *connection,
+                      const char *url, const char *method,
+                      const char *version, const char *upload_data,
+                      size_t *upload_data_size, void **con_cls)
+{
+  (void)cls;               /* Unused. Silent compiler warning. */
+  (void)url;               /* Unused. Silent compiler warning. */
+  (void)version;           /* Unused. Silent compiler warning. */
+
+  if (NULL == *con_cls)
+    {
+      struct connection_info_struct *con_info;
+
+      con_info = malloc (sizeof (struct connection_info_struct));
+      if (NULL == con_info)
+        return MHD_NO;
+      con_info->answerstring = NULL;
+
+      if (0 == strcmp (method, "POST"))
         {
-            if ( fork()==0 )
+          con_info->postprocessor =
+            MHD_create_post_processor (connection, POSTBUFFERSIZE,
+                                       iterate_post, (void *) con_info);
+
+          if (NULL == con_info->postprocessor)
             {
-                respond(slot);
-                exit(0);
+              free (con_info);
+              return MHD_NO;
             }
+
+          con_info->connectiontype = POST;
         }
+      else
+        con_info->connectiontype = GET;
 
-        while (clients[slot]!=-1) slot = (slot+1)%CONNMAX;
+      *con_cls = (void *) con_info;
+
+      return MHD_YES;
     }
-}
 
-//start server
-void startServer(const char *port)
-{
-    struct addrinfo hints, *res, *p;
-
-    // getaddrinfo for host
-    memset (&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-    if (getaddrinfo( NULL, port, &hints, &res) != 0)
+  if (0 == strcmp (method, "GET"))
     {
-        perror ("getaddrinfo() error");
-        exit(1);
+      return send_page (connection, askpage);
     }
-    // socket and bind
-    for (p = res; p!=NULL; p=p->ai_next)
+
+  if (0 == strcmp (method, "POST"))
     {
-        int option = 1;
-        listenfd = socket (p->ai_family, p->ai_socktype, 0);
-        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
-        if (listenfd == -1) continue;
-        if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0) break;
-    }
-    if (p==NULL)
-    {
-        perror ("socket() or bind()");
-        exit(1);
-    }
+      struct connection_info_struct *con_info = *con_cls;
 
-    freeaddrinfo(res);
-
-    // listen for incoming connections
-    if ( listen (listenfd, 1000000) != 0 )
-    {
-        perror("listen() error");
-        exit(1);
-    }
-}
-
-
-// get request header
-char *request_header(const char* name)
-{
-    header_t *h = reqhdr;
-    while(h->name) {
-        if (strcmp(h->name, name) == 0) return h->value;
-        h++;
-    }
-    return NULL;
-}
-
-//client connection
-void respond(int n)
-{
-    int rcvd, fd, bytes_read;
-    char *ptr;
-
-    buf = malloc(65535);
-    rcvd=recv(clients[n], buf, 65535, 0);
-
-    if (rcvd<0)    // receive error
-        fprintf(stderr,("recv() error\n"));
-    else if (rcvd==0)    // receive socket closed
-        fprintf(stderr,"Client disconnected upexpectedly.\n");
-    else    // message received
-    {
-        buf[rcvd] = '\0';
-
-        method = strtok(buf,  " \t\r\n");
-        uri    = strtok(NULL, " \t");
-        prot   = strtok(NULL, " \t\r\n");
-
-        fprintf(stderr, "\x1b[32m + [%s] %s\x1b[0m\n", method, uri);
-
-        if (qs = strchr(uri, '?'))
+      if (*upload_data_size != 0)
         {
-            *qs++ = '\0'; //split URI
-        } else {
-            qs = uri - 1; //use an empty string
+          MHD_post_process (con_info->postprocessor, upload_data,
+                            *upload_data_size);
+          *upload_data_size = 0;
+
+          return MHD_YES;
         }
-
-        header_t *h = reqhdr;
-        char *t, *t2;
-        while(h < reqhdr+16) {
-            char *k,*v,*t;
-            k = strtok(NULL, "\r\n: \t"); if (!k) break;
-            v = strtok(NULL, "\r\n");     while(*v && *v==' ') v++;
-            h->name  = k;
-            h->value = v;
-            h++;
-            fprintf(stderr, "[H] %s: %s\n", k, v);
-            t = v + 1 + strlen(v);
-            if (t[1] == '\r' && t[2] == '\n') break;
-        }
-        t++; // now the *t shall be the beginning of user payload
-        t2 = request_header("Content-Length"); // and the related header if there is
-        payload = t;
-        payload_size = t2 ? atol(t2) : (rcvd-(t-buf));
-
-        // bind clientfd to stdout, making it easier to write
-        clientfd = clients[n];
-        dup2(clientfd, STDOUT_FILENO);
-        close(clientfd);
-
-        // call router
-        route();
-
-        // tidy up
-        fflush(stdout);
-        shutdown(STDOUT_FILENO, SHUT_WR);
-        close(STDOUT_FILENO);
+      else if (NULL != con_info->answerstring)
+        return send_page (connection, con_info->answerstring);
     }
 
-    //Closing SOCKET
-    shutdown(clientfd, SHUT_RDWR);         //All further send and recieve operations are DISABLED...
-    close(clientfd);
-    clients[n]=-1;
+  return send_page (connection, errorpage);
 }

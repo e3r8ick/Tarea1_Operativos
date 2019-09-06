@@ -1,27 +1,43 @@
-#include <server.h>
+ #include <server.h>
+ #include <sys/types.h>
+ #ifndef _WIN32
+ #include <sys/select.h>
+ #include <sys/socket.h>
+ #else
+ #include <winsock2.h>
+ #endif
+ #include <microhttpd.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <stdlib.h>
 
-int main(int c, char** v)
+ #if defined(_MSC_VER) && _MSC_VER+0 <= 1800
+ /* Substitution is OK while return value is not used */
+ #define snprintf _snprintf
+ #endif
+
+ #define PORT            8888
+ #define POSTBUFFERSIZE  512
+ #define MAXNAMESIZE     2000
+ #define MAXANSWERSIZE   512
+
+ #define GET             0
+ #define POST            1
+
+int main()
 {
-    serve_forever("1717");
-    return 0;
-}
+  struct MHD_Daemon *daemon;
 
-void route()
-{
-    ROUTE_START()
+  daemon = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
+                             &answer_to_connection, NULL,
+                             MHD_OPTION_NOTIFY_COMPLETED, request_completed,
+                             NULL, MHD_OPTION_END);
+  if (NULL == daemon)
+    return 1;
 
-    ROUTE_GET("/")
-    {
-        printf("HTTP/1.1 200 OK\r\n\r\n");
-        printf("Hello! You are using %s", request_header("User-Agent"));
-    }
+  (void) getchar ();
 
-    ROUTE_POST("/")
-    {
-        printf("HTTP/1.1 200 OK\r\n\r\n");
-        printf("Wow, seems that you POSTed %d bytes. \r\n", payload_size);
-        printf("Fetch the data using `payload` variable.");
-    }
+  MHD_stop_daemon (daemon);
 
-    ROUTE_END()
+  return 0;
 }
