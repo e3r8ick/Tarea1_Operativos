@@ -1,4 +1,4 @@
-
+/*tomado de https://www.gnu.org/software/libmicrohttpd/tutorial.html#largepost_002ec*/
 
 /* Feel free to use this example code in any way
    you see fit (Public Domain) */
@@ -15,7 +15,6 @@
 #define snprintf _snprintf
 #endif
 
-#define PORT            8888
 #define POSTBUFFERSIZE  512
 #define MAXCLIENTS      2
 
@@ -126,7 +125,14 @@ if (size > 0)
       }
   }
 
-return MHD_YES;
+  // constantes del configuracion
+  configParams* params = getConfigVariables();
+
+//mover archivos de ubicación
+  const char *newname = "test/a.png";
+  rename (filename, newname);
+
+  return MHD_YES;
 }
 
 
