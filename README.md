@@ -1,5 +1,10 @@
 # Tarea Corta 1 Principios de SO
 
+## Instalaciones Previas
+```
+sudo apt-get install libmicrohttpd-dev
+```
+
 ## Intrucciones de uso
 Para ver los puertos abiertos
 ```
