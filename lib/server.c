@@ -22,9 +22,10 @@ static unsigned int nr_of_uploading_clients = 0;
 
 const char *askpage = "<html><body>\n\
                      Upload a file, please!<br>\n\
-                     There are %u clients uploading at the moment.<br>\n\
                      <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
                      <input name=\"file\" type=\"file\">\n\
+                     <input name=\"client\" type=\"hidden\" value=\"0\">\n\
+                     <input name=\"op\" placeholder=\"Operacion\" type=\"text\">\n\
                      <input type=\"submit\" value=\" Send \"></form>\n\
                      </body></html>";
 const char *busypage =
@@ -85,13 +86,6 @@ FILE *fp;
 (void)transfer_encoding;  /* Unused. Silent compiler warning. */
 (void)off;                /* Unused. Silent compiler warning. */
 
-if (0 != strcmp (key, "file"))
-  {
-    con_info->answerstring = servererrorpage;
-    con_info->answercode = MHD_HTTP_BAD_REQUEST;
-    return MHD_YES;
-  }
-
 if (! con_info->fp)
   {
     if (0 != con_info->answercode) /* something went wrong */
@@ -123,6 +117,45 @@ if (size > 0)
         con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
         return MHD_YES;
       }
+  }
+
+  if (0 == strcmp (data, "0"))
+  {
+    FILE * fp;
+
+    fp = fopen ("log/log.txt", "a+");
+    fprintf(fp, "%s", "Cliente Web\n");
+
+    fclose(fp);
+  }
+  if (0 == strcmp (data, "1"))
+  {
+    FILE * fp;
+
+    fp = fopen ("log/log.txt", "a+");
+    fprintf(fp, "%s", "Cliente App\n");
+
+    fclose(fp);
+  }
+  if (0 == strcmp (data, "hist"))
+  {
+    FILE * fp;
+
+    fp = fopen ("log/log.txt", "a+");
+    fprintf(fp, "%s", "#######################################################\n");
+    fprintf(fp, "%s", "Operacion de Histograma\n");
+
+    fclose(fp);
+  }
+  if (0 == strcmp (data, "racist"))
+  {
+    FILE * fp;
+
+    fp = fopen ("log/log.txt", "a+");
+    fprintf(fp, "%s", "#######################################################\n");
+    fprintf(fp, "%s", "Operacion de Clasificacion por color\n");
+
+    fclose(fp);
   }
 
   // constantes del configuracion
