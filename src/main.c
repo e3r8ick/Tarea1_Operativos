@@ -10,13 +10,14 @@
  #include <stdio.h>
  #include <string.h>
  #include <stdlib.h>
+ #include <config.h>
 
  #if defined(_MSC_VER) && _MSC_VER+0 <= 1800
  /* Substitution is OK while return value is not used */
  #define snprintf _snprintf
  #endif
 
- #define PORT            8888
+ //#define PORT  8080
  #define POSTBUFFERSIZE  512
  #define MAXNAMESIZE     2000
  #define MAXANSWERSIZE   512
@@ -28,16 +29,21 @@ int main()
 {
   struct MHD_Daemon *daemon;
 
-  daemon = MHD_start_daemon (MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
+
+  configParams* params = getConfigVariables();
+
+  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD,
+                             atoi(params->port), NULL, NULL,
                              &answer_to_connection, NULL,
-                             MHD_OPTION_NOTIFY_COMPLETED, request_completed,
-                             NULL, MHD_OPTION_END);
-  if (NULL == daemon)
-    return 1;
-
-  (void) getchar ();
-
-  MHD_stop_daemon (daemon);
-
-  return 0;
+                             MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
+                             MHD_OPTION_END);
+ if (NULL == daemon)
+   {
+     fprintf (stderr,
+              "Failed to start daemon\n");
+     return 1;
+   }
+ (void) getchar ();
+ MHD_stop_daemon (daemon);
+ return 0;
 }
