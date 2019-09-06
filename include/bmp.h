@@ -38,5 +38,4 @@ unsigned char* read_grayscale(char* filename);
 unsigned char* read_full_color(char* filename);
 int offset_size(char* filename);
 int* read_size(char* filename);
-void write(unsigned char* data,int offset_size, unsigned char* head, int width, int height,char* name);
 #endif

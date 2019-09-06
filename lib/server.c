@@ -124,6 +124,7 @@ if (size > 0)
     FILE * fp;
 
     fp = fopen ("log/log.txt", "a+");
+    fprintf(fp, "%s", "#######################################################\n");
     fprintf(fp, "%s", "Cliente Web\n");
 
     fclose(fp);
@@ -133,16 +134,20 @@ if (size > 0)
     FILE * fp;
 
     fp = fopen ("log/log.txt", "a+");
+    fprintf(fp, "%s", "#######################################################\n");
     fprintf(fp, "%s", "Cliente App\n");
 
     fclose(fp);
   }
   if (0 == strcmp (data, "hist"))
   {
+
+    //ejecutar el Histograma
+    //hist();
+
     FILE * fp;
 
     fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "#######################################################\n");
     fprintf(fp, "%s", "Operacion de Histograma\n");
 
     fclose(fp);
@@ -152,7 +157,6 @@ if (size > 0)
     FILE * fp;
 
     fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "#######################################################\n");
     fprintf(fp, "%s", "Operacion de Clasificacion por color\n");
 
     fclose(fp);
@@ -161,9 +165,17 @@ if (size > 0)
   // constantes del configuracion
   configParams* params = getConfigVariables();
 
-//mover archivos de ubicación
-  const char *newname = "test/a.png";
-  rename (filename, newname);
+  //mover archivos de ubicación
+  char array_char[800];
+  strcpy(array_char,"images/");
+  if(filename != NULL){
+    printf("filename: %s\n", filename);
+    strcat(array_char,filename);
+    printf("path %s\n", array_char);
+  }
+
+  //const char *newname = "images/a.png";
+  rename (filename, array_char);
 
   return MHD_YES;
 }

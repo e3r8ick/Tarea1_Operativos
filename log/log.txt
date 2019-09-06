@@ -1,0 +1,6 @@
+#######################################################
+Cliente Web
+Operacion de Histograma
+#######################################################
+Cliente Web
+Operacion de Clasificacion por color

@@ -52,16 +52,6 @@ void write_bmp(unsigned char* data, int width, int height,char* name){
 }
 
 
-
-void write(unsigned char* data,int offset_size, unsigned char* head, int width, int height,char* name){
-    char padding[2];
-    FILE* fp = fopen(name, "w+");
-    fwrite((void*)head, 1, offset_size, fp);
-    fwrite((void*)data, 1, width*height, fp);
-    fwrite((void*)&padding,1,2,fp);
-    fclose(fp);
-}
-
 //method to read data from a bmp grayscale image file
 unsigned char* read_grayscale(char* filename){
 

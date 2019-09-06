@@ -1,6 +1,5 @@
 
-libraries: libserver.a libconfig.a libbmp.a
-	# libimageProcessing.a
+libraries: libserver.a libconfig.a libbmp.a libimageProcessing.a
 
 libserver.a: server.o
 	#Create an static library
