@@ -1,8 +1,18 @@
-/*tomado de https://www.gnu.org/software/libmicrohttpd/tutorial.html#largepost_002ec*/
 
 /* Feel free to use this example code in any way
-   you see fit (Public Domain) */
-#include <server.h>
+ you see fit (Public Domain) */
+
+#include <sys/types.h>
+#ifndef _WIN32
+#include <sys/select.h>
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <microhttpd.h>
 
 #ifdef _MSC_VER
 #ifndef strcasecmp
@@ -15,17 +25,53 @@
 #define snprintf _snprintf
 #endif
 
+#define PORT            8888
 #define POSTBUFFERSIZE  512
 #define MAXCLIENTS      2
 
+enum ConnectionType
+{
+  GET = 0,
+  POST = 1
+};
+
 static unsigned int nr_of_uploading_clients = 0;
+
+
+/**
+* Information we keep per connection.
+*/
+struct connection_info_struct
+{
+enum ConnectionType connectiontype;
+
+/**
+ * Handle to the POST processing state.
+ */
+struct MHD_PostProcessor *postprocessor;
+
+/**
+ * File handle where we write uploaded data.
+ */
+FILE *fp;
+
+/**
+ * HTTP response body we will return, NULL if not yet known.
+ */
+const char *answerstring;
+
+/**
+ * HTTP status code we will return, 0 for undecided.
+ */
+unsigned int answercode;
+};
+
 
 const char *askpage = "<html><body>\n\
                      Upload a file, please!<br>\n\
+                     There are %u clients uploading at the moment.<br>\n\
                      <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
                      <input name=\"file\" type=\"file\">\n\
-                     <input name=\"client\" type=\"hidden\" value=\"0\">\n\
-                     <input name=\"op\" placeholder=\"Operacion\" type=\"text\">\n\
                      <input type=\"submit\" value=\" Send \"></form>\n\
                      </body></html>";
 const char *busypage =
@@ -44,7 +90,8 @@ const char* const postprocerror =
 "<html><head><title>Error</title></head><body>Error processing POST data</body></html>";
 
 
-int send_page (struct MHD_Connection *connection,
+static int
+send_page (struct MHD_Connection *connection,
          const char *page,
          int status_code)
 {
@@ -69,7 +116,8 @@ return ret;
 }
 
 
-int iterate_post (void *coninfo_cls,
+static int
+iterate_post (void *coninfo_cls,
             enum MHD_ValueKind kind,
             const char *key,
             const char *filename,
@@ -85,6 +133,13 @@ FILE *fp;
 (void)content_type;       /* Unused. Silent compiler warning. */
 (void)transfer_encoding;  /* Unused. Silent compiler warning. */
 (void)off;                /* Unused. Silent compiler warning. */
+
+if (0 != strcmp (key, "file"))
+  {
+    con_info->answerstring = servererrorpage;
+    con_info->answercode = MHD_HTTP_BAD_REQUEST;
+    return MHD_YES;
+  }
 
 if (! con_info->fp)
   {
@@ -119,69 +174,12 @@ if (size > 0)
       }
   }
 
-  if (0 == strcmp (data, "0"))
-  {
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "#######################################################\n");
-    fprintf(fp, "%s", "Cliente Web\n");
-
-    fclose(fp);
-  }
-  if (0 == strcmp (data, "1"))
-  {
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "#######################################################\n");
-    fprintf(fp, "%s", "Cliente App\n");
-
-    fclose(fp);
-  }
-  if (0 == strcmp (data, "hist"))
-  {
-
-    //ejecutar el Histograma
-    //hist();
-
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "Operacion de Histograma\n");
-
-    fclose(fp);
-  }
-  if (0 == strcmp (data, "racist"))
-  {
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "Operacion de Clasificacion por color\n");
-
-    fclose(fp);
-  }
-
-  // constantes del configuracion
-  configParams* params = getConfigVariables();
-
-  //mover archivos de ubicación
-  char array_char[800];
-  strcpy(array_char,"images/");
-  if(filename != NULL){
-    printf("filename: %s\n", filename);
-    strcat(array_char,filename);
-    printf("path %s\n", array_char);
-  }
-
-  //const char *newname = "images/a.png";
-  rename (filename, array_char);
-
-  return MHD_YES;
+return MHD_YES;
 }
 
 
-void request_completed (void *cls,
+static void
+request_completed (void *cls,
                  struct MHD_Connection *connection,
                  void **con_cls,
                  enum MHD_RequestTerminationCode toe)
@@ -211,7 +209,8 @@ free (con_info);
 }
 
 
-int answer_to_connection (void *cls,
+static int
+answer_to_connection (void *cls,
                     struct MHD_Connection *connection,
                     const char *url,
                     const char *method,
@@ -328,4 +327,26 @@ if (0 == strcasecmp (method, MHD_HTTP_METHOD_POST))
 return send_page (connection,
                   errorpage,
                   MHD_HTTP_BAD_REQUEST);
+}
+
+
+int
+main ()
+{
+struct MHD_Daemon *daemon;
+
+daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD,
+                           PORT, NULL, NULL,
+                           &answer_to_connection, NULL,
+                           MHD_OPTION_NOTIFY_COMPLETED, &request_completed, NULL,
+                           MHD_OPTION_END);
+if (NULL == daemon)
+  {
+    fprintf (stderr,
+             "Failed to start daemon\n");
+    return 1;
+  }
+(void) getchar ();
+MHD_stop_daemon (daemon);
+return 0;
 }

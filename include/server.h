@@ -1,37 +1,84 @@
-#ifndef _HTTPD_H___
-#define _HTTPD_H___
+#ifndef SERVERPH_H
+#define SERVERPH_H
 
 #include <string.h>
 #include <stdio.h>
+#include <sys/types.h>
+#ifndef _WIN32
+#include <sys/select.h>
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#endif
+#include <microhttpd.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <config.h>
+#include <imageProcessing.h>
 
-//Server control functions
+enum ConnectionType
+{
+  GET = 0,
+  POST = 1
+};
 
-void serve_forever(const char *PORT);
 
-// Client request
+/**
+* Information we keep per connection.
+*/
+struct connection_info_struct
+{
+  enum ConnectionType connectiontype;
 
-char    *method,    // "GET" or "POST"
-        *uri,       // "/index.html" things before '?'
-        *qs,        // "a=1&b=2"     things after  '?'
-        *prot;      // "HTTP/1.1"
+  /**
+   * Handle to the POST processing state.
+   */
+  struct MHD_PostProcessor *postprocessor;
 
-char    *payload;     // for POST
-int      payload_size;
+  /**
+   * File handle where we write uploaded data.
+   */
+  FILE *fp;
 
-char *request_header(const char* name);
+  /**
+   * HTTP response body we will return, NULL if not yet known.
+   */
+  const char *answerstring;
 
-// user shall implement this function
+  /**
+   * HTTP status code we will return, 0 for undecided.
+   */
+  unsigned int answercode;
+};
 
-void route();
 
-// some interesting macro for `route()`
-#define ROUTE_START()       if (0) {
-#define ROUTE(METHOD,URI)   } else if (strcmp(URI,uri)==0&&strcmp(METHOD,method)==0) {
-#define ROUTE_GET(URI)      ROUTE("GET", URI)
-#define ROUTE_POST(URI)     ROUTE("POST", URI)
-#define ROUTE_END()         } else printf(\
-                                "HTTP/1.1 500 Not Handled\r\n\r\n" \
-                                "The server has no handler to the request.\r\n" \
-                            );
+int send_page (struct MHD_Connection *connection,
+               const char *page,
+               int status_code);
+
+int iterate_post (void *coninfo_cls,
+             enum MHD_ValueKind kind,
+             const char *key,
+             const char *filename,
+             const char *content_type,
+             const char *transfer_encoding,
+             const char *data,
+             uint64_t off,
+             size_t size);
+
+ void request_completed (void *cls,
+                  struct MHD_Connection *connection,
+                  void **con_cls,
+                  enum MHD_RequestTerminationCode toe);
+
+int answer_to_connection (void *cls,
+                    struct MHD_Connection *connection,
+                    const char *url,
+                    const char *method,
+                    const char *version,
+                    const char *upload_data,
+                    size_t *upload_data_size,
+                    void **con_cls);
 
 #endif
