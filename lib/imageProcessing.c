@@ -20,9 +20,7 @@ void hist(char* filename){
     int image_size = image_width*image_height;*/
 
     // read from the input bmp image file
-    printf("here1\n");
     unsigned char* image = read_grayscale(filename);
-    printf("here2\n");
     unsigned char* output_image = malloc(sizeof(unsigned char) * image_size);
 
     // create a histogram for the pixel values
@@ -54,6 +52,7 @@ void racist(char* filename){
 
 
     //read size from header
+    printf("filename %s\n", filename);
     int* size;
     size = read_size(filename);
     int image_width = size[0];

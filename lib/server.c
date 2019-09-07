@@ -18,14 +18,13 @@
 #define POSTBUFFERSIZE  512
 #define MAXCLIENTS      2
 
+_Bool flag = 0;
 static unsigned int nr_of_uploading_clients = 0;
 
 const char *askpage = "<html><body>\n\
                      Upload a file, please!<br>\n\
                      <form action=\"/filepost\" method=\"post\" enctype=\"multipart/form-data\">\n\
                      <input name=\"file\" type=\"file\">\n\
-                     <input name=\"client\" type=\"hidden\" value=\"0\">\n\
-                     <input name=\"op\" placeholder=\"Operacion\" type=\"text\">\n\
                      <input type=\"submit\" value=\" Send \"></form>\n\
                      </body></html>";
 const char *busypage =
@@ -113,7 +112,7 @@ if (size > 0)
   {
     if (! fwrite (data, sizeof (char), size, con_info->fp))
       {
-        con_info->answerstring = fileioerror;
+        con_info->answerstring = fileioerror  ;
         con_info->answercode = MHD_HTTP_INTERNAL_SERVER_ERROR;
         return MHD_YES;
       }
@@ -125,57 +124,41 @@ if (size > 0)
   //mover archivos de ubicación
   char array_char[800];
   strcpy(array_char,"images/");
-  if(filename != NULL){
-    printf("filename: %s\n", filename);
-    strcat(array_char,filename);
-    printf("path %s\n", array_char);
-  }
-
-  if (0 == strcmp (data, "0"))
-  {
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "#######################################################\n");
-    fprintf(fp, "%s", "Cliente Web\n");
-
-    fclose(fp);
-  }
-  if (0 == strcmp (data, "1"))
-  {
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "#######################################################\n");
-    fprintf(fp, "%s", "Cliente App\n");
-
-    fclose(fp);
-  }
-  if (0 == strcmp (data, "hist"))
-  {
-
-    //ejecutar el Histograma
-    hist(array_char);
-
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "Operacion de Histograma\n");
-
-    fclose(fp);
-  }
-  if (0 == strcmp (data, "racist"))
-  {
-    FILE * fp;
-
-    fp = fopen ("log/log.txt", "a+");
-    fprintf(fp, "%s", "Operacion de Clasificacion por color\n");
-
-    fclose(fp);
-  }
+  strcat(array_char,filename);
 
   //const char *newname = "images/a.png";
   rename (filename, array_char);
+
+  //hisograma
+  //hist(array_char);
+
+  //colores
+  int color = racist(array_char);
+  if(color == 1){
+    char array_charR[800];
+    strcpy(array_charR,"outputImages/R/");
+    strcat(array_charR,filename);
+    rename (array_charR,  "outputImages/R/");
+  }
+  else if(color == 2){
+    char array_charR[800];
+    strcpy(array_charG,"outputImages/G/);
+    strcat(array_charG,filename);
+    rename (array_charG,  "outputImages/G/");
+  }else{
+    char array_charR[800];
+    strcpy(array_charB,"outputImages/B/");
+    strcat(array_charB,filename);
+    rename (array_charB,  "outputImages/B/");
+  }
+
+  fp = fopen ("log/log.txt", "a+");
+  fprintf(fp, "%s", "#######################################################\n");
+  fprintf(fp, "%s", "Cliente Web\n");
+  fprintf(fp, "%s", "Clasificacion por Colores\n");
+  fprintf(fp, "%s", "Operación de Histograma\n");
+
+  fclose(fp);
 
   return MHD_YES;
 }

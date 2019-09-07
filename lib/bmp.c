@@ -119,9 +119,9 @@ int* read_size(char* filename){
     int width;
     int height;
     fseek(fp, 18, SEEK_SET);
-    fread(&width, 2, 1, fp);
+    fread(&width, 4, 1, fp);
     fseek(fp, 22, SEEK_SET);
-    fread(&height, 2, 1, fp);
+    fread(&height, 4, 1, fp);
 
     size[0]=height;
     size[1]=width;
