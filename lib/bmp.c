@@ -2,10 +2,12 @@
     C program to read from and write to a bmp image file.
 */
 
+#include <bmp.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bmp.h"
+
 
 // method to write data to the bmp file
 void write_bmp(unsigned char* data, int width, int height,char* name){

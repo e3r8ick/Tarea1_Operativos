@@ -25,7 +25,7 @@ config.o: lib/config.c include/config.h
 	gcc -c lib/config.c -o lib/config.o -Iinclude
 
 bmp.o: lib/bmp.c include/bmp.h
-	gcc -c lib/bmp.c -o lib/bmp.o -Iinclude
+	gcc -c lib/bmp.c -o lib/bmp.o -Iinclude -Llib
 
 imageProcessing.o: lib/imageProcessing.c include/imageProcessing.h
-	gcc -c lib/imageProcessing.c -o lib/imageProcessing.o -Iinclude
+	gcc -c lib/imageProcessing.c -o lib/imageProcessing.o -Iinclude -Llib

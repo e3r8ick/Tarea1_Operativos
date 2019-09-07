@@ -119,6 +119,18 @@ if (size > 0)
       }
   }
 
+  // constantes del configuracion
+  configParams* params = getConfigVariables();
+
+  //mover archivos de ubicación
+  char array_char[800];
+  strcpy(array_char,"images/");
+  if(filename != NULL){
+    printf("filename: %s\n", filename);
+    strcat(array_char,filename);
+    printf("path %s\n", array_char);
+  }
+
   if (0 == strcmp (data, "0"))
   {
     FILE * fp;
@@ -143,7 +155,7 @@ if (size > 0)
   {
 
     //ejecutar el Histograma
-    //hist();
+    hist(array_char);
 
     FILE * fp;
 
@@ -160,18 +172,6 @@ if (size > 0)
     fprintf(fp, "%s", "Operacion de Clasificacion por color\n");
 
     fclose(fp);
-  }
-
-  // constantes del configuracion
-  configParams* params = getConfigVariables();
-
-  //mover archivos de ubicación
-  char array_char[800];
-  strcpy(array_char,"images/");
-  if(filename != NULL){
-    printf("filename: %s\n", filename);
-    strcat(array_char,filename);
-    printf("path %s\n", array_char);
   }
 
   //const char *newname = "images/a.png";

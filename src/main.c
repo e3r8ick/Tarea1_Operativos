@@ -11,6 +11,8 @@
  #include <string.h>
  #include <stdlib.h>
  #include <config.h>
+ #include <bmp.h>
+ #include <imageProcessing.h>
 
  #if defined(_MSC_VER) && _MSC_VER+0 <= 1800
  /* Substitution is OK while return value is not used */
