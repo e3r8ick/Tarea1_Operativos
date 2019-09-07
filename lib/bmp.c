@@ -18,7 +18,7 @@ void write_bmp(unsigned char* data, int width, int height,char* name){
     id.magic2 = 0x4D;
 
     struct bmp_header header;
-    //header.file_size = width*height+54 + 2;
+    header.file_size = width*height+54 + 2;
     header.pixel_offset = 1078;
 
     struct bmp_dib_header dib_header;
@@ -117,13 +117,13 @@ int* read_size(char* filename){
     FILE* fp = fopen(filename, "rb");
 
     int *result= malloc (sizeof (int) * 2);
-    int size[2];
+    int size[2] = {0,0};
     int width;
     int height;
     fseek(fp, 18, SEEK_SET);
-    fread(&width, 2, 1, fp);
+    fread(&width, 4, 1, fp);
     fseek(fp, 22, SEEK_SET);
-    fread(&height, 2, 1, fp);
+    fread(&height, 4, 1, fp);
 
     size[0]=height;
     size[1]=width;
