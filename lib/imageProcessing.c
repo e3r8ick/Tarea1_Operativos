@@ -44,22 +44,25 @@ void hist(char* filename){
         output_image[i] = transfer_function[image[i]];
         // output_image[i] = image[i];
     }
+    //char array_char[800];
+    //strcpy(array_char,"images/");
+    //strcat(array_char,filename);
 
     // write data to output bmp image file
-    write_bmp(output_image, image_width, image_height,"out.bmp");
+    write_bmp(output_image, image_width, image_height,filename);
     // write(image,offset_size(argv[1]), read_head(argv[1]), image_width,image_height,"out.bmp");
 }
 
-void racist(char* filename){
+int racist(char* filename){
 
 
     //read size from header
     int* size;
     size = read_size(filename);
     int image_width = size[0];
-    printf("w: %i\n",image_width);
+    //printf("w: %i\n",image_width);
     int image_height = size[1];
-    printf("h: %i\n",image_height);
+    //printf("h: %i\n",image_height);
     int image_size = image_width*image_height;
 
     // read from the input bmp image file
@@ -75,13 +78,16 @@ void racist(char* filename){
 
     printf("R: %ld, G: %ld, B: %ld \n",sumR,sumG,sumB);
     if(sumR>sumB&&sumR>sumG){
-        printf("Is RED\n");
+        return 1;
+        //printf("Is RED\n");
     }
     else if(sumG>sumB&&sumG>sumR) {
-        printf("Is GREEN\n");
+        return 2;
+        //printf("Is GREEN\n");
     }
     else{
-        printf("Is BLUE\n");
+        return 3;
+        //printf("Is BLUE\n");
     }
 
 
