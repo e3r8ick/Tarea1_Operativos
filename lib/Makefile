@@ -11,7 +11,7 @@ libbmp.a: bmp.o
 	ranlib lib/libbmp.a
 
 libimageProcessing.a: imageProcessing.o
-	ar rv lib/libimageProcessing.a lib/imageProcessing.o
+	ar rv lib/libimageProcessing.a lib/imageProcessing.o lib/bmp.o
 	ranlib lib/libimageProcessing.a
 
 libconfig.a: config.o
@@ -28,4 +28,5 @@ bmp.o: lib/bmp.c include/bmp.h
 	gcc -c lib/bmp.c -o lib/bmp.o -Iinclude -Llib
 
 imageProcessing.o: lib/imageProcessing.c include/imageProcessing.h
+	echo compilando imageProcessing.o
 	gcc -c lib/imageProcessing.c -o lib/imageProcessing.o -Iinclude -Llib
