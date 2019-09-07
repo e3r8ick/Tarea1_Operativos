@@ -1,3 +1,5 @@
+//based on code found at https://github.com/Zarana-Parekh/Histogram-Equalization-Algorithm/blob/master/hist_serial.c
+
 /*
     C program to read from and write to a bmp image file.
 */
