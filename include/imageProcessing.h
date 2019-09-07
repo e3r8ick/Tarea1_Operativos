@@ -9,6 +9,6 @@
 
 
 void hist(char* filename);
-void racist(char* filename);
+int racist(char* filename);
 
 #endif
